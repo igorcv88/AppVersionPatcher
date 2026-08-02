@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">App Version Patcher</string>
+    <string name="xposed_description">Altera versionName e versionCode por aplicativo usando a API moderna do LSPosed.</string>
+</resources>
