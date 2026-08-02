@@ -10,6 +10,7 @@ import java.util.Set;
 public final class ConfigStore {
     public static final String MODULE_PACKAGE = "io.github.igorcv88.appversionpatcher";
     public static final String PREFS_NAME = "version_spoofs";
+    public static final long MAX_VERSION_CODE = Integer.MAX_VALUE;
 
     private static final String LEGACY_PREFS_NAME = PREFS_NAME;
     private static final String KEY_PACKAGES = "configured_packages";
@@ -83,6 +84,10 @@ public final class ConfigStore {
     }
 
     public static boolean save(SharedPreferences preferences, VersionConfig config) {
+        if (!isSupportedVersionCode(config.versionCode)) {
+            return false;
+        }
+
         Set<String> current = preferences.getStringSet(KEY_PACKAGES, Collections.emptySet());
         Set<String> packages = current == null ? new HashSet<>() : new HashSet<>(current);
         packages.add(config.packageName);
@@ -115,13 +120,17 @@ public final class ConfigStore {
                 .commit();
     }
 
+    public static boolean isSupportedVersionCode(Long value) {
+        return value == null || (value >= 0 && value <= MAX_VERSION_CODE);
+    }
+
     private static Long parseLongOrNull(String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
         try {
             long parsed = Long.parseLong(value.trim());
-            return parsed >= 0 ? parsed : null;
+            return isSupportedVersionCode(parsed) ? parsed : null;
         } catch (NumberFormatException ignored) {
             return null;
         }

@@ -190,10 +190,8 @@ public final class XposedInit extends XposedModule {
         }
         packageInfo.versionName = config.versionName;
         if (config.versionCode != null) {
-            long code = config.versionCode;
-            packageInfo.versionCode = code > Integer.MAX_VALUE
-                    ? Integer.MAX_VALUE
-                    : (int) code;
+            int code = config.versionCode.intValue();
+            packageInfo.versionCode = code;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 packageInfo.setLongVersionCode(code);
             }

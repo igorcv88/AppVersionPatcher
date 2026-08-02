@@ -49,6 +49,8 @@ Configured applications remain visible at the top even when they are temporarily
 
 Granting root access to the module application is not required. Hook execution is provided by LSPosed inside the scoped target process.
 
+`versionCode` is limited to the non-negative Java `int` range (`0` through `2147483647`). This keeps the deprecated `PackageInfo.versionCode` field and `getLongVersionCode()` consistent for applications that still read the legacy field.
+
 ## libxposed structure
 
 - Java entry: `META-INF/xposed/java_init.list`
