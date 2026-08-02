@@ -15,6 +15,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Require main branch
+        run: |
+          test "$GITHUB_REF_NAME" = "main" || {
+            echo "::error::Releases must be built from the main branch."
+            exit 1
+          }
+
       - name: Check out source
         uses: actions/checkout@v4
         with:
@@ -73,34 +80,71 @@ jobs:
           OUTPUT_FILE="$(python3 -c 'import json; print(json.load(open("'"$METADATA"'"))["elements"][0]["outputFile"])')"
           SOURCE_APK="app/build/outputs/apk/release/$OUTPUT_FILE"
           RELEASE_APK="$RUNNER_TEMP/AppVersionPatcher.apk"
+          RELEASE_NOTES="$RUNNER_TEMP/release-notes.md"
+          RELEASE_TAG="${VERSION_CODE}-${VERSION_NAME}"
 
           cp "$SOURCE_APK" "$RELEASE_APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$RELEASE_APK"
 
+          python3 - "$VERSION_NAME" "$RELEASE_NOTES" <<'PY'
+          import pathlib
+          import re
+          import sys
+
+          version = sys.argv[1]
+          destination = pathlib.Path(sys.argv[2])
+          changelog = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = re.compile(
+              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)",
+              re.MULTILINE | re.DOTALL,
+          )
+          match = pattern.search(changelog)
+          if not match:
+              raise SystemExit(f"No CHANGELOG.md section found for version {version}")
+          notes = match.group(1).strip()
+          destination.write_text(notes + "\n", encoding="utf-8")
+          PY
+
           echo "path=$RELEASE_APK" >> "$GITHUB_OUTPUT"
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "notes=$RELEASE_NOTES" >> "$GITHUB_OUTPUT"
 
-      - name: Publish rolling GitHub Release
+      - name: Publish versioned GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           APK_PATH: ${{ steps.apk.outputs.path }}
           VERSION_NAME: ${{ steps.apk.outputs.version_name }}
-          VERSION_CODE: ${{ steps.apk.outputs.version_code }}
+          RELEASE_TAG: ${{ steps.apk.outputs.tag }}
+          RELEASE_NOTES: ${{ steps.apk.outputs.notes }}
         run: |
-          TAG="latest"
-          TITLE="App Version Patcher v${VERSION_NAME}"
-          NOTES="Signed APK built from commit ${GITHUB_SHA}. Android versionCode: ${VERSION_CODE}."
-
-          git tag -f "$TAG" "$GITHUB_SHA"
-          git push origin "refs/tags/$TAG" --force
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --latest
-            gh release upload "$TAG" "${APK_PATH}#AppVersionPatcher.apk" --clobber
-          else
-            gh release create "$TAG" "${APK_PATH}#AppVersionPatcher.apk" \
-              --title "$TITLE" \
-              --notes "$NOTES" \
-              --latest
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Release $RELEASE_TAG already exists. Increment versionCode and versionName before publishing another release."
+            exit 1
           fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $RELEASE_TAG already exists without a release. Resolve it before publishing."
+            exit 1
+          fi
+
+          git tag "$RELEASE_TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$RELEASE_TAG"
+
+          gh release create "$RELEASE_TAG" \
+            "${APK_PATH}#AppVersionPatcher.apk" \
+            --title "$VERSION_NAME" \
+            --notes-file "$RELEASE_NOTES" \
+            --latest
+
+      - name: Update latest pointer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view latest >/dev/null 2>&1; then
+            gh release delete latest --yes
+          fi
+
+          git tag -f latest "$GITHUB_SHA"
+          git push origin "refs/tags/latest" --force

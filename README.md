@@ -1,87 +1,105 @@
-# App Version Patcher
+<div align="center">
+  <img src="docs/app-icon.svg" width="128" height="128" alt="App Version Patcher icon">
 
-App Version Patcher is a configurable LSPosed module that changes the application version reported inside selected target processes, without modifying or resigning the target APK.
+  <h1>App Version Patcher</h1>
 
-The module is application-agnostic. No package or version is preconfigured on a clean installation.
+  <p>Override application-reported version metadata at runtime with LSPosed.</p>
+
+  <p>
+    <a href="#requirements"><img alt="Android 8.1+" src="https://img.shields.io/badge/Android-8.1%2B-3DDC84?logo=android&amp;logoColor=white"></a>
+    <a href="#requirements"><img alt="libxposed API 101" src="https://img.shields.io/badge/libxposed-API%20101-6C63FF"></a>
+    <a href="https://github.com/igorcv88/AppVersionPatcher/actions/workflows/android.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/igorcv88/AppVersionPatcher/android.yml?branch=main&amp;label=build"></a>
+    <a href="https://github.com/igorcv88/AppVersionPatcher/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/igorcv88/AppVersionPatcher?label=release"></a>
+    <a href="https://github.com/igorcv88/AppVersionPatcher/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/igorcv88/AppVersionPatcher/total"></a>
+    <a href="LICENSE"><img alt="License: PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-5C4EE5"></a>
+  </p>
+</div>
+
+## Features
+
+- Per-application `versionName` and optional `versionCode` overrides.
+- Standard Android `PackageManager` hooks.
+- React Native support for apps using `react-native-device-info`.
+- Dynamic LSPosed scope requests and remote preferences.
+- No modification or resigning of target APKs.
+- Signed, versioned APK releases.
 
 ## Requirements
 
-- LSPosed or a compatible implementation of libxposed API 101
-- Android 8.1 or newer
-- The target application included in the module scope
+- Android 8.1 or newer.
+- LSPosed or another implementation compatible with libxposed API 101.
+- The target application included in the module scope.
 
-The module uses only the modern libxposed API. It does not use the legacy Xposed API, `XSharedPreferences`, or a custom cross-application `ContentProvider`.
+The configuration app does not request root access or network access.
 
-## Supported hooks
+## Installation
 
-Two independent hook strategies can be enabled for each package:
-
-- **PackageManager:** patches `PackageInfo.versionName`, `versionCode`, and `longVersionCode` returned inside the target process. This covers applications that obtain their version through the standard Android package APIs.
-- **RNDeviceInfo:** patches `RNDeviceModule#getConstants()` and the internal `PackageInfo` used by `react-native-device-info`. This covers React Native applications that use that library for version information.
-
-Applications that read a hardcoded constant, use another library, or obtain the version exclusively from a server may require a different hook point.
-
-## Configuration and scope
-
-Configuration is stored in remote preferences managed by LSPosed. The module application uses the modern LSPosed service to:
-
-- read and write the same preferences available to injected target processes;
-- display the current module scope;
-- request that an application be added to the scope when saving its first configuration.
-
-The application list is ordered as follows:
-
-1. applications with an active version override;
-2. applications in the module scope without an override;
-3. all other installed applications.
-
-Configured applications remain visible at the top even when they are temporarily outside the scope. After saving a configuration, force-stop and reopen the target application. Updating the module may also require the restart procedure used by the installed LSPosed implementation.
+1. Download `AppVersionPatcher.apk` from the [latest release](https://github.com/igorcv88/AppVersionPatcher/releases/latest).
+2. Install the APK and enable **App Version Patcher** in LSPosed.
+3. Add the intended target applications to the module scope.
+4. Restart the affected processes, or perform the restart required by your LSPosed implementation.
 
 ## Usage
 
-1. Install and activate App Version Patcher in LSPosed.
-2. Open the module application and wait for the LSPosed service connection.
-3. Select a target application.
-4. Enter the desired `versionName` and, optionally, `versionCode`.
-5. Enable PackageManager, RNDeviceInfo, or both.
-6. Save the configuration and approve the scope request when required.
-7. Force-stop and reopen the target application.
+1. Open **App Version Patcher** and select a target application.
+2. Enter the desired `versionName`.
+3. Optionally enter a `versionCode` from `0` through `2147483647`.
+4. Enable **PackageManager**, **RNDeviceInfo**, or both.
+5. Save the configuration.
+6. Force-stop and reopen the target application.
 
-Granting root access to the module application is not required. Hook execution is provided by LSPosed inside the scoped target process.
+Configured applications stay at the top of the list. Existing settings are preserved when the module is updated.
 
-`versionCode` is limited to the non-negative Java `int` range (`0` through `2147483647`). This keeps the deprecated `PackageInfo.versionCode` field and `getLongVersionCode()` consistent for applications that still read the legacy field.
+## Legitimate use cases
 
-## libxposed structure
+- Software development and QA.
+- Compatibility and regression testing.
+- Testing version-dependent migrations or feature gates.
+- Validating Android and React Native version-reporting behavior.
+- Interoperability research in controlled or authorized environments.
+- Reproducing version-specific bugs without rebuilding a target APK.
 
-- Java entry: `META-INF/xposed/java_init.list`
-- Module configuration: `META-INF/xposed/module.prop`
-- `minApiVersion=101`
-- `targetApiVersion=101`
-- `staticScope=false`
+## Compatibility
 
-There is no package-specific default scope.
+The `PackageManager` method covers applications that read their version from Android `PackageInfo`. The `RNDeviceInfo` method covers React Native applications that use `react-native-device-info`.
 
-## Build and release
+Applications using unrelated libraries, hardcoded values, or exclusively server-side checks may require different hook points.
 
-The GitHub Actions workflow runs only through `workflow_dispatch`. It:
+## Root and injection considerations
 
-- uses JDK 17 and Android SDK 36;
-- builds `assembleRelease`;
-- signs with `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, and `KEY_PASSWORD`;
-- verifies the APK with `apksigner`;
-- updates the rolling `latest` release with a single `AppVersionPatcher.apk` asset;
-- does not upload a GitHub Actions artifact.
+App Version Patcher does not execute `su`, alter mount namespaces, change system properties, modify denylist settings, or disable root-concealment tools. Its own hooks only change version values in memory.
 
-## Launcher icon
+However, the target process must receive LSPosed injection for the module to work. Framework injection can itself be detectable, and allowing injection may conflict with a root-concealment policy:
 
-The launcher artwork is an original vector created directly for this project. It is not copied from an external icon pack or third-party asset. The Android resources include separate background and foreground layers for adaptive icons, plus legacy and monochrome fallbacks.
+- With Zygisk Next **Enforce DenyList**, applications in the denylist do not receive Zygisk or LSPosed modules.
+- On KernelSU, **Unmount Modules** is used as the application denylist switch.
+- Disabling unmounting to permit injection can leave module mount changes visible to that process.
+- Zygisk Next's **Unmount Only** mode can allow module injection while restoring mount changes, when supported and correctly configured.
 
-## Limitations and safety
+These behaviors are controlled by the root and injection framework, not by App Version Patcher. The module cannot guarantee root concealment. Use the smallest necessary scope and test sensitive applications individually.
 
-Changing the version perceived by an application can affect migrations, feature gates, compatibility checks, and update flows. Use the smallest necessary scope and verify that important operations are still accepted by the remote service.
+## Responsible use
 
-The module does not automatically discover the newest version from an application store and does not bypass server-side version enforcement when the client-reported value is ignored.
+App Version Patcher is intended for software development, compatibility testing, interoperability research, and other lawful and authorized uses. Users are responsible for ensuring that their use complies with applicable laws, third-party terms, and authorization requirements.
+
+Do not use this software to bypass payment, licensing, access controls, anti-fraud protections, or security mechanisms. The software is provided as-is, without warranty.
+
+See [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md) for the full project policy.
+
+## Releases
+
+Each published version receives its own release and tag in the format:
+
+```text
+versionCode-versionName
+```
+
+The `latest` tag is maintained only as a pointer to the newest release commit. Release notes come from [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT
+The public source code is available under the [PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use is not granted by the public license. The license and required notice are also included inside the APK.
+
+Commercial licensing may be granted separately through a written agreement with the copyright holder. See [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md).
+
+Copies of earlier versions already received under the MIT License retain the permissions granted to those copies at the time of distribution.

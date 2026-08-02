@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108" role="img" aria-labelledby="title description">
+  <title id="title">App Version Patcher</title>
+  <desc id="description">Three version metadata lines with a plus symbol on an indigo rounded square.</desc>
+  <rect width="108" height="108" rx="24" fill="#3F51B5"/>
+  <path fill="#FFFFFF" d="M28 31h52v11H28zM28 49h35v11H28zM28 67h24v11H28zM72 58h10v25H72zM64 65h26v10H64z"/>
+</svg>

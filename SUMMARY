@@ -1,0 +1,1 @@
+Override app-reported versionName and versionCode at runtime through Android PackageManager and React Native device-info hooks.
