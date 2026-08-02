@@ -1,0 +1,2 @@
+-keep class io.github.igorcv88.appversionpatcher.XposedInit { *; }
+-keepresourcefiles META-INF/xposed/**
