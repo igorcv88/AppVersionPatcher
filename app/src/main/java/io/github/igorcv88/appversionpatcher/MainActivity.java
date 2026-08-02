@@ -101,6 +101,9 @@ public final class MainActivity extends Activity implements XposedServiceClient.
             preferences = remote;
             scope.clear();
             scope.addAll(service.getScope());
+            if (scope.isEmpty() && ConfigStore.configuredPackages(preferences).isEmpty()) {
+                showOnlyScope.setChecked(false);
+            }
             adapter.setState(preferences, scope);
             serviceStatus.setText(
                     service.getFrameworkName() + " " + service.getFrameworkVersion() +
