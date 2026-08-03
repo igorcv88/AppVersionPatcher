@@ -21,6 +21,7 @@
 - Standard Android `PackageManager` hooks.
 - React Native support for apps using `react-native-device-info`.
 - Dynamic LSPosed scope requests and remote preferences.
+- Optional launcher-icon hiding with access through the LSPosed module page.
 - No modification or resigning of target APKs.
 - Signed, versioned APK releases.
 
@@ -49,6 +50,12 @@ The configuration app does not request root access or network access.
 6. Force-stop and reopen the target application.
 
 Configured applications stay at the top of the list. Existing settings are preserved when the module is updated.
+
+### Launcher visibility
+
+Open the module from LSPosed's **Modules** page to hide or restore its launcher icon. When hidden, the main configuration remains available through that LSPosed entry.
+
+This setting disables only the launcher's activity alias. It does not uninstall the app, hide the package from package queries, conceal LSPosed injection, or replace a root-concealment setup.
 
 ## Legitimate use cases
 

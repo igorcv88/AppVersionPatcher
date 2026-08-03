@@ -4,6 +4,19 @@ All notable changes to App Version Patcher are documented in this file.
 
 The project uses Android `versionCode` plus semantic `versionName`. Release tags use the LSPosed repository-compatible format `versionCode-versionName`.
 
+## [2.0.5] - 2026-08-03
+
+### Added
+
+- Added an optional launcher-icon visibility control.
+- Added a dedicated LSPosed module-settings entry that remains available when the launcher alias is disabled.
+- Added localized guidance explaining that hiding the launcher entry does not conceal the installed package or framework injection.
+
+### Changed
+
+- Moved the launcher intent filter to a dedicated activity alias.
+- Made the main configuration activity non-exported and reachable through the launcher alias or the LSPosed settings entry.
+
 ## [2.0.4] - 2026-08-02
 
 ### Changed

@@ -4,6 +4,15 @@
     <string name="app_tagline">Override app-reported version metadata at runtime.</string>
     <string name="app_icon_content_description">App Version Patcher icon</string>
 
+    <string name="module_settings_tagline">Module access and launcher visibility</string>
+    <string name="launcher_visibility_title">Launcher visibility</string>
+    <string name="hide_launcher_icon">Hide launcher icon</string>
+    <string name="hide_launcher_description">When hidden, open this module from the LSPosed Modules page. This only removes the launcher entry; it does not hide the installed package or LSPosed injection.</string>
+    <string name="launcher_icon_hidden">Launcher icon hidden. Open the module from LSPosed.</string>
+    <string name="launcher_icon_shown">Launcher icon restored.</string>
+    <string name="launcher_icon_change_failed">Could not change launcher visibility: %1$s</string>
+    <string name="open_configuration">Open configuration</string>
+
     <string name="service_waiting">Waiting for LSPosed…</string>
     <string name="service_disconnected">LSPosed service disconnected.</string>
     <string name="service_api_unsupported">LSPosed API %1$d detected; API 101 is required.</string>

@@ -4,6 +4,15 @@
     <string name="app_tagline">Altere em tempo real a versão informada pelos aplicativos.</string>
     <string name="app_icon_content_description">Ícone do App Version Patcher</string>
 
+    <string name="module_settings_tagline">Acesso ao módulo e visibilidade no launcher</string>
+    <string name="launcher_visibility_title">Visibilidade no launcher</string>
+    <string name="hide_launcher_icon">Ocultar ícone do launcher</string>
+    <string name="hide_launcher_description">Quando estiver oculto, abra este módulo pela página de Módulos do LSPosed. Isso remove somente a entrada do launcher; não oculta o pacote instalado nem a injeção do LSPosed.</string>
+    <string name="launcher_icon_hidden">Ícone ocultado. Abra o módulo pelo LSPosed.</string>
+    <string name="launcher_icon_shown">Ícone restaurado no launcher.</string>
+    <string name="launcher_icon_change_failed">Não foi possível alterar a visibilidade no launcher: %1$s</string>
+    <string name="open_configuration">Abrir configuração</string>
+
     <string name="service_waiting">Aguardando o LSPosed…</string>
     <string name="service_disconnected">Serviço do LSPosed desconectado.</string>
     <string name="service_api_unsupported">API %1$d do LSPosed detectada; a API 101 é obrigatória.</string>
