@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">App Version Patcher</string>
+    <string name="xposed_description">Altera versionName e versionCode por aplicativo usando APIs modernas do LSPosed.</string>
+    <string name="app_tagline">Altere em tempo real a versão informada pelos aplicativos.</string>
+    <string name="app_icon_content_description">Ícone do App Version Patcher</string>
+
+    <string name="service_waiting">Aguardando o LSPosed…</string>
+    <string name="service_disconnected">Serviço do LSPosed desconectado.</string>
+    <string name="service_api_unsupported">API %1$d do LSPosed detectada; a API 101 é obrigatória.</string>
+    <plurals name="service_connected">
+        <item quantity="one">%1$s %2$s · API %3$d · %4$d app no escopo</item>
+        <item quantity="other">%1$s %2$s · API %3$d · %4$d apps no escopo</item>
+    </plurals>
+    <string name="service_connection_failed">Não foi possível conectar ao LSPosed: %1$s</string>
+
+    <string name="search_hint">Buscar aplicativos ou pacotes</string>
+    <string name="filter_scope_only">Mostrar somente apps no escopo</string>
+    <string name="filter_system_apps">Mostrar apps do sistema</string>
+    <string name="empty_apps">Nenhum aplicativo encontrado.</string>
+    <string name="wait_for_lsposed">Aguarde a conexão com o LSPosed.</string>
+
+    <string name="installed_info">%1$s\nInstalada: %2$s (code %3$d)\nEscopo: %4$s</string>
+    <string name="scope_included">incluído</string>
+    <string name="scope_not_included">não incluído</string>
+    <string name="version_name_hint">versionName, por exemplo 1.2.3</string>
+    <string name="version_code_hint">versionCode opcional</string>
+    <string name="hook_package_manager">Alterar PackageManager (Android padrão)</string>
+    <string name="hook_rn_device_info">Alterar RNDeviceInfo (React Native)</string>
+    <string name="scope_already_included">Este aplicativo já está no escopo.</string>
+    <string name="scope_will_request">Ao salvar, o LSPosed solicitará a inclusão deste aplicativo no escopo do módulo.</string>
+
+    <string name="action_save">Salvar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_remove">Remover</string>
+    <string name="no_configuration">Sem configuração</string>
+
+    <string name="error_version_name_required">Informe uma versão.</string>
+    <string name="error_version_code_range">Use um número inteiro entre 0 e %1$d.</string>
+    <string name="error_enable_hook">Ative pelo menos um método de hook.</string>
+    <string name="save_not_confirmed">O LSPosed não confirmou a gravação.</string>
+    <string name="save_success_restart">Salvo. Force a parada e reabra o aplicativo-alvo.</string>
+    <string name="remove_not_confirmed">O LSPosed não confirmou a remoção.</string>
+    <string name="configuration_removed">Configuração removida. O aplicativo permanece no escopo.</string>
+    <string name="scope_service_disconnected">Configuração salva, mas o serviço desconectou antes de solicitar o escopo.</string>
+    <string name="scope_approved">Escopo aprovado. Force a parada e reabra o aplicativo-alvo.</string>
+    <string name="scope_not_added">Configuração salva, mas o pacote não foi adicionado ao escopo.</string>
+    <string name="scope_request_failed">Configuração salva; falha ao solicitar escopo: %1$s</string>
+
+    <string name="scope_state_in">no escopo</string>
+    <string name="scope_state_out">fora do escopo</string>
+    <string name="installed_summary">Instalada: %1$s · %2$s</string>
+    <string name="applied_summary">Aplicada: %1$s%2$s · %3$s</string>
+    <string name="version_code_suffix"> (code %1$d)</string>
+</resources>

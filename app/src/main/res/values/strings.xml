@@ -1,4 +1,54 @@
 <resources>
     <string name="app_name">App Version Patcher</string>
-    <string name="xposed_description">Altera versionName e versionCode por aplicativo usando a API moderna do LSPosed.</string>
+    <string name="xposed_description">Override versionName and versionCode per app with modern LSPosed APIs.</string>
+    <string name="app_tagline">Override app-reported version metadata at runtime.</string>
+    <string name="app_icon_content_description">App Version Patcher icon</string>
+
+    <string name="service_waiting">Waiting for LSPosed…</string>
+    <string name="service_disconnected">LSPosed service disconnected.</string>
+    <string name="service_api_unsupported">LSPosed API %1$d detected; API 101 is required.</string>
+    <plurals name="service_connected">
+        <item quantity="one">%1$s %2$s · API %3$d · %4$d app in scope</item>
+        <item quantity="other">%1$s %2$s · API %3$d · %4$d apps in scope</item>
+    </plurals>
+    <string name="service_connection_failed">Could not connect to LSPosed: %1$s</string>
+
+    <string name="search_hint">Search apps or package names</string>
+    <string name="filter_scope_only">Only show scoped apps</string>
+    <string name="filter_system_apps">Show system apps</string>
+    <string name="empty_apps">No apps found.</string>
+    <string name="wait_for_lsposed">Wait for the LSPosed connection.</string>
+
+    <string name="installed_info">%1$s\nInstalled: %2$s (code %3$d)\nScope: %4$s</string>
+    <string name="scope_included">included</string>
+    <string name="scope_not_included">not included</string>
+    <string name="version_name_hint">versionName, for example 1.2.3</string>
+    <string name="version_code_hint">Optional versionCode</string>
+    <string name="hook_package_manager">Override PackageManager (standard Android)</string>
+    <string name="hook_rn_device_info">Override RNDeviceInfo (React Native)</string>
+    <string name="scope_already_included">This app is already in scope.</string>
+    <string name="scope_will_request">Saving will request that LSPosed add this app to the module scope.</string>
+
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_remove">Remove</string>
+    <string name="no_configuration">No configuration</string>
+
+    <string name="error_version_name_required">Enter a version.</string>
+    <string name="error_version_code_range">Use an integer from 0 through %1$d.</string>
+    <string name="error_enable_hook">Enable at least one hook method.</string>
+    <string name="save_not_confirmed">LSPosed did not confirm the save.</string>
+    <string name="save_success_restart">Saved. Force-stop and reopen the target app.</string>
+    <string name="remove_not_confirmed">LSPosed did not confirm the removal.</string>
+    <string name="configuration_removed">Configuration removed. The app remains in scope.</string>
+    <string name="scope_service_disconnected">Configuration saved, but the service disconnected before requesting scope.</string>
+    <string name="scope_approved">Scope approved. Force-stop and reopen the target app.</string>
+    <string name="scope_not_added">Configuration saved, but the package was not added to scope.</string>
+    <string name="scope_request_failed">Configuration saved; scope request failed: %1$s</string>
+
+    <string name="scope_state_in">in scope</string>
+    <string name="scope_state_out">outside scope</string>
+    <string name="installed_summary">Installed: %1$s · %2$s</string>
+    <string name="applied_summary">Applied: %1$s%2$s · %3$s</string>
+    <string name="version_code_suffix"> (code %1$d)</string>
 </resources>

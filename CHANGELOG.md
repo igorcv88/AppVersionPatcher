@@ -4,6 +4,19 @@ All notable changes to App Version Patcher are documented in this file.
 
 The project uses Android `versionCode` plus semantic `versionName`. Release tags use the LSPosed repository-compatible format `versionCode-versionName`.
 
+## [2.0.4] - 2026-08-02
+
+### Changed
+
+- Reworked the configuration screen with a lightweight native Android design.
+- Added correct system-bar insets for Android 15 and newer edge-to-edge behavior.
+- Added automatic light and dark themes without introducing a UI framework dependency.
+- Changed the default interface language to English and added a Brazilian Portuguese translation.
+- Added Android per-app language support for English and Brazilian Portuguese.
+- Moved all user-facing configuration and dialog text into localized resources.
+- Updated app-list rows, search, status, filters, and editor fields for clearer spacing and hierarchy.
+- Improved direct `versionCode` range validation in the editor.
+
 ## [2.0.3] - 2026-08-02
 
 ### Changed

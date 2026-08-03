@@ -6,6 +6,12 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.content.res.Configuration;
+import android.graphics.Color;
+import android.graphics.Insets;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
@@ -14,9 +20,13 @@ import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -37,7 +47,7 @@ import io.github.libxposed.service.XposedService;
 public final class MainActivity extends Activity implements XposedServiceClient.Listener {
     private final List<AppEntry> allApps = new ArrayList<>();
     private final Set<String> scope = new HashSet<>();
-    private final Collator collator = Collator.getInstance(new Locale("pt", "BR"));
+    private final Collator collator = Collator.getInstance();
 
     private AppListAdapter adapter;
     private SharedPreferences preferences;
@@ -53,7 +63,10 @@ public final class MainActivity extends Activity implements XposedServiceClient.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(buildContentView());
+        configureEdgeToEdge();
+        View content = buildContentView();
+        setContentView(content);
+        content.requestApplyInsets();
         loadApps();
     }
 
@@ -81,7 +94,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
             preferences = null;
             scope.clear();
             adapter.setState(null, Collections.emptySet());
-            serviceStatus.setText("Serviço do LSPosed desconectado.");
+            serviceStatus.setText(R.string.service_disconnected);
             applyFilter();
         });
     }
@@ -90,7 +103,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
         try {
             int api = service.getApiVersion();
             if (api < 101) {
-                serviceStatus.setText("LSPosed API " + api + " detectada; este módulo requer API 101.");
+                serviceStatus.setText(getString(R.string.service_api_unsupported, api));
                 return;
             }
 
@@ -105,17 +118,24 @@ public final class MainActivity extends Activity implements XposedServiceClient.
                 showOnlyScope.setChecked(false);
             }
             adapter.setState(preferences, scope);
-            serviceStatus.setText(
-                    service.getFrameworkName() + " " + service.getFrameworkVersion() +
-                            " · API " + api + " · " + scope.size() + " app(s) no escopo"
-            );
+            serviceStatus.setText(getResources().getQuantityString(
+                    R.plurals.service_connected,
+                    scope.size(),
+                    service.getFrameworkName(),
+                    service.getFrameworkVersion(),
+                    api,
+                    scope.size()
+            ));
             applyFilter();
         } catch (Throwable throwable) {
             xposedService = null;
             preferences = null;
             scope.clear();
             adapter.setState(null, Collections.emptySet());
-            serviceStatus.setText("Falha ao conectar ao serviço do LSPosed: " + throwable.getMessage());
+            serviceStatus.setText(getString(
+                    R.string.service_connection_failed,
+                    throwableMessage(throwable)
+            ));
             applyFilter();
         }
     }
@@ -123,89 +143,166 @@ public final class MainActivity extends Activity implements XposedServiceClient.
     private View buildContentView() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(16), dp(18), dp(16), dp(8));
+        root.setBackgroundColor(color(R.color.background));
+        root.setClipToPadding(false);
+        applySystemBarInsets(root);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.mipmap.ic_launcher);
+        logo.setContentDescription(getString(R.string.app_icon_content_description));
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(52), dp(52));
+        logoParams.setMarginEnd(dp(12));
+        header.addView(logo, logoParams);
+
+        LinearLayout headerText = new LinearLayout(this);
+        headerText.setOrientation(LinearLayout.VERTICAL);
 
         TextView title = new TextView(this);
-        title.setText("App Version Patcher");
-        title.setTextSize(24);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        root.addView(title);
+        title.setText(R.string.app_name);
+        title.setTextSize(22);
+        title.setTextColor(color(R.color.text_primary));
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        headerText.addView(title);
 
         TextView description = new TextView(this);
-        description.setText(
-                "API moderna do LSPosed. Apps configurados ficam no topo; ao salvar um app fora " +
-                        "do escopo, o módulo solicita sua inclusão. Reinicie o processo-alvo após salvar."
+        description.setText(R.string.app_tagline);
+        description.setTextSize(13);
+        description.setTextColor(color(R.color.text_secondary));
+        description.setPadding(0, dp(2), 0, 0);
+        headerText.addView(description);
+
+        header.addView(headerText, new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1
+        ));
+
+        LinearLayout.LayoutParams headerParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        description.setTextSize(14);
-        description.setPadding(0, dp(6), 0, dp(8));
-        root.addView(description);
+        headerParams.bottomMargin = dp(12);
+        root.addView(header, headerParams);
 
         serviceStatus = new TextView(this);
-        serviceStatus.setText("Aguardando serviço do LSPosed…");
-        serviceStatus.setTextSize(13);
-        serviceStatus.setPadding(0, 0, 0, dp(10));
-        root.addView(serviceStatus);
-
-        searchInput = new EditText(this);
-        searchInput.setHint("Buscar aplicativo ou pacote");
-        searchInput.setSingleLine(true);
-        searchInput.setInputType(InputType.TYPE_CLASS_TEXT);
-        root.addView(searchInput, new LinearLayout.LayoutParams(
+        serviceStatus.setText(R.string.service_waiting);
+        serviceStatus.setTextSize(12);
+        serviceStatus.setTextColor(color(R.color.accent));
+        serviceStatus.setBackgroundResource(R.drawable.bg_status);
+        serviceStatus.setPadding(dp(12), dp(8), dp(12), dp(8));
+        root.addView(serviceStatus, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         ));
 
-        showOnlyScope = new CheckBox(this);
-        showOnlyScope.setText("Mostrar somente aplicativos no escopo");
-        showOnlyScope.setChecked(true);
-        root.addView(showOnlyScope);
+        searchInput = new EditText(this);
+        searchInput.setHint(R.string.search_hint);
+        searchInput.setSingleLine(true);
+        searchInput.setInputType(InputType.TYPE_CLASS_TEXT);
+        searchInput.setTextSize(15);
+        searchInput.setTextColor(color(R.color.text_primary));
+        searchInput.setHintTextColor(color(R.color.text_secondary));
+        searchInput.setBackgroundResource(R.drawable.bg_input);
+        searchInput.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                R.drawable.ic_search,
+                0,
+                0,
+                0
+        );
+        searchInput.setCompoundDrawablePadding(dp(10));
+        searchInput.setCompoundDrawableTintList(
+                ColorStateList.valueOf(color(R.color.text_secondary))
+        );
+        searchInput.setPadding(dp(14), 0, dp(14), 0);
+        searchInput.setMinHeight(dp(52));
 
-        showSystemApps = new CheckBox(this);
-        showSystemApps.setText("Mostrar aplicativos do sistema");
-        root.addView(showSystemApps);
-
-        progressBar = new ProgressBar(this);
-        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+        LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        progressParams.gravity = Gravity.CENTER_HORIZONTAL;
-        progressParams.topMargin = dp(24);
-        root.addView(progressBar, progressParams);
+        searchParams.topMargin = dp(12);
+        root.addView(searchInput, searchParams);
+
+        LinearLayout filters = new LinearLayout(this);
+        filters.setOrientation(LinearLayout.VERTICAL);
+        filters.setPadding(0, dp(4), 0, dp(4));
+
+        showOnlyScope = new CheckBox(this);
+        styleCheckBox(showOnlyScope);
+        showOnlyScope.setText(R.string.filter_scope_only);
+        showOnlyScope.setChecked(true);
+        filters.addView(showOnlyScope);
+
+        showSystemApps = new CheckBox(this);
+        styleCheckBox(showSystemApps);
+        showSystemApps.setText(R.string.filter_system_apps);
+        filters.addView(showSystemApps);
+
+        root.addView(filters, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
 
         ListView listView = new ListView(this);
         adapter = new AppListAdapter(this);
         listView.setAdapter(adapter);
+        listView.setBackgroundColor(Color.TRANSPARENT);
+        listView.setDivider(new ColorDrawable(color(R.color.outline)));
         listView.setDividerHeight(1);
+        listView.setClipToPadding(false);
+        listView.setPadding(0, dp(4), 0, dp(8));
+        listView.setScrollbarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
         listView.setOnItemClickListener((parent, view, position, id) -> {
             if (preferences == null || xposedService == null) {
-                Toast.makeText(this, "Aguarde a conexão com o LSPosed.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.wait_for_lsposed, Toast.LENGTH_SHORT).show();
                 return;
             }
             showEditor(adapter.getItem(position));
         });
 
         emptyView = new TextView(this);
-        emptyView.setText("Nenhum aplicativo encontrado.");
+        emptyView.setText(R.string.empty_apps);
+        emptyView.setTextSize(14);
+        emptyView.setTextColor(color(R.color.text_secondary));
         emptyView.setGravity(Gravity.CENTER);
+        emptyView.setPadding(dp(24), dp(24), dp(24), dp(24));
         emptyView.setVisibility(View.GONE);
 
-        LinearLayout listContainer = new LinearLayout(this);
-        listContainer.setOrientation(LinearLayout.VERTICAL);
-        listContainer.addView(listView, new LinearLayout.LayoutParams(
+        progressBar = new ProgressBar(this);
+        progressBar.setIndeterminateTintList(ColorStateList.valueOf(color(R.color.accent)));
+
+        FrameLayout listContainer = new FrameLayout(this);
+        listContainer.setBackgroundResource(R.drawable.bg_panel);
+        listContainer.setClipToOutline(true);
+        listContainer.addView(listView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+
+        FrameLayout.LayoutParams emptyParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        );
+        listContainer.addView(emptyView, emptyParams);
+
+        FrameLayout.LayoutParams progressParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER
+        );
+        listContainer.addView(progressBar, progressParams);
+
+        LinearLayout.LayoutParams listParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 0,
                 1
-        ));
-        listContainer.addView(emptyView, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-        ));
-        root.addView(listContainer, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1
-        ));
+        );
+        listParams.topMargin = dp(6);
+        root.addView(listContainer, listParams);
 
         searchInput.addTextChangedListener(new SimpleTextWatcher(this::applyFilter));
         showSystemApps.setOnCheckedChangeListener((buttonView, isChecked) -> applyFilter());
@@ -257,7 +354,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
                             versionCode
                     ));
                 } catch (PackageManager.NameNotFoundException ignored) {
-                    // O pacote foi alterado durante o carregamento.
+                    // The package changed while the list was loading.
                 }
             }
 
@@ -333,51 +430,71 @@ public final class MainActivity extends Activity implements XposedServiceClient.
 
         LinearLayout fields = new LinearLayout(this);
         fields.setOrientation(LinearLayout.VERTICAL);
-        fields.setPadding(dp(20), dp(4), dp(20), dp(4));
+        fields.setPadding(dp(20), dp(8), dp(20), dp(8));
 
         TextView packageView = new TextView(this);
-        packageView.setText(
-                entry.packageName + "\nInstalada: " + entry.installedVersionName +
-                        " (code " + entry.installedVersionCode + ")\nEscopo: " +
-                        (currentlyInScope ? "incluído" : "não incluído")
-        );
+        packageView.setText(getString(
+                R.string.installed_info,
+                entry.packageName,
+                entry.installedVersionName,
+                entry.installedVersionCode,
+                getString(currentlyInScope
+                        ? R.string.scope_included
+                        : R.string.scope_not_included)
+        ));
         packageView.setTextSize(13);
-        packageView.setPadding(0, 0, 0, dp(10));
-        fields.addView(packageView);
+        packageView.setTextColor(color(R.color.text_secondary));
+        LinearLayout.LayoutParams packageParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        packageParams.bottomMargin = dp(12);
+        fields.addView(packageView, packageParams);
 
         EditText versionName = new EditText(this);
-        versionName.setHint("versionName, por exemplo 1.2.3");
-        versionName.setSingleLine(true);
+        styleInput(versionName);
+        versionName.setHint(R.string.version_name_hint);
         versionName.setInputType(InputType.TYPE_CLASS_TEXT);
         versionName.setText(existing == null ? entry.installedVersionName : existing.versionName);
-        fields.addView(versionName);
+        LinearLayout.LayoutParams versionNameParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        versionNameParams.bottomMargin = dp(10);
+        fields.addView(versionName, versionNameParams);
 
         EditText versionCode = new EditText(this);
-        versionCode.setHint("versionCode opcional");
-        versionCode.setSingleLine(true);
+        styleInput(versionCode);
+        versionCode.setHint(R.string.version_code_hint);
         versionCode.setInputType(InputType.TYPE_CLASS_NUMBER);
         if (existing != null && existing.versionCode != null) {
             versionCode.setText(Long.toString(existing.versionCode));
         }
-        fields.addView(versionCode);
+        LinearLayout.LayoutParams versionCodeParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        versionCodeParams.bottomMargin = dp(8);
+        fields.addView(versionCode, versionCodeParams);
 
         CheckBox packageManagerHook = new CheckBox(this);
-        packageManagerHook.setText("Falsificar PackageManager (Android geral)");
+        styleCheckBox(packageManagerHook);
+        packageManagerHook.setText(R.string.hook_package_manager);
         packageManagerHook.setChecked(existing == null || existing.hookPackageManager);
         fields.addView(packageManagerHook);
 
         CheckBox reactNativeHook = new CheckBox(this);
-        reactNativeHook.setText("Falsificar RNDeviceInfo (React Native)");
+        styleCheckBox(reactNativeHook);
+        reactNativeHook.setText(R.string.hook_rn_device_info);
         reactNativeHook.setChecked(existing == null || existing.hookReactNativeDeviceInfo);
         fields.addView(reactNativeHook);
 
         TextView note = new TextView(this);
-        note.setText(
-                currentlyInScope
-                        ? "O aplicativo já está no escopo."
-                        : "Ao salvar, o LSPosed solicitará a inclusão deste aplicativo no escopo."
-        );
+        note.setText(currentlyInScope
+                ? R.string.scope_already_included
+                : R.string.scope_will_request);
         note.setTextSize(12);
+        note.setTextColor(color(R.color.text_secondary));
         note.setPadding(0, dp(8), 0, 0);
         fields.addView(note);
 
@@ -387,9 +504,14 @@ public final class MainActivity extends Activity implements XposedServiceClient.
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(entry.label)
                 .setView(scrollView)
-                .setPositiveButton("Salvar", null)
-                .setNegativeButton("Cancelar", null)
-                .setNeutralButton(existing == null ? "Sem configuração" : "Remover", null)
+                .setPositiveButton(R.string.action_save, null)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setNeutralButton(
+                        existing == null
+                                ? R.string.no_configuration
+                                : R.string.action_remove,
+                        null
+                )
                 .create();
 
         dialog.setOnShowListener(ignored -> {
@@ -397,7 +519,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
             saveButton.setOnClickListener(view -> {
                 String name = versionName.getText().toString().trim();
                 if (name.isEmpty()) {
-                    versionName.setError("Informe a versão.");
+                    versionName.setError(getString(R.string.error_version_name_required));
                     return;
                 }
 
@@ -406,17 +528,24 @@ public final class MainActivity extends Activity implements XposedServiceClient.
                 if (!codeText.isEmpty()) {
                     try {
                         code = Long.parseLong(codeText);
-                        if (code < 0) {
+                        if (!ConfigStore.isSupportedVersionCode(code)) {
                             throw new NumberFormatException();
                         }
                     } catch (NumberFormatException exception) {
-                        versionCode.setError("Use um número inteiro não negativo.");
+                        versionCode.setError(getString(
+                                R.string.error_version_code_range,
+                                ConfigStore.MAX_VERSION_CODE
+                        ));
                         return;
                     }
                 }
 
                 if (!packageManagerHook.isChecked() && !reactNativeHook.isChecked()) {
-                    Toast.makeText(this, "Ative pelo menos um método de hook.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(
+                            this,
+                            R.string.error_enable_hook,
+                            Toast.LENGTH_SHORT
+                    ).show();
                     return;
                 }
 
@@ -428,7 +557,11 @@ public final class MainActivity extends Activity implements XposedServiceClient.
                         reactNativeHook.isChecked()
                 ));
                 if (!saved) {
-                    Toast.makeText(this, "O LSPosed não confirmou a gravação.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(
+                            this,
+                            R.string.save_not_confirmed,
+                            Toast.LENGTH_LONG
+                    ).show();
                     return;
                 }
 
@@ -437,7 +570,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
                 if (scope.contains(entry.packageName)) {
                     Toast.makeText(
                             this,
-                            "Salvo. Force a parada e reabra o aplicativo-alvo.",
+                            R.string.save_success_restart,
                             Toast.LENGTH_LONG
                     ).show();
                 } else {
@@ -449,13 +582,17 @@ public final class MainActivity extends Activity implements XposedServiceClient.
             removeButton.setEnabled(existing != null);
             removeButton.setOnClickListener(view -> {
                 if (!ConfigStore.remove(preferences, entry.packageName)) {
-                    Toast.makeText(this, "O LSPosed não confirmou a remoção.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(
+                            this,
+                            R.string.remove_not_confirmed,
+                            Toast.LENGTH_LONG
+                    ).show();
                     return;
                 }
                 applyFilter();
                 Toast.makeText(
                         this,
-                        "Configuração removida. O aplicativo permanece no escopo.",
+                        R.string.configuration_removed,
                         Toast.LENGTH_LONG
                 ).show();
                 dialog.dismiss();
@@ -469,7 +606,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
         if (service == null) {
             Toast.makeText(
                     this,
-                    "Configuração salva, mas o serviço desconectou antes de solicitar o escopo.",
+                    R.string.scope_service_disconnected,
                     Toast.LENGTH_LONG
             ).show();
             return;
@@ -488,8 +625,8 @@ public final class MainActivity extends Activity implements XposedServiceClient.
                                 Toast.makeText(
                                         MainActivity.this,
                                         approved.contains(packageName)
-                                                ? "Escopo aprovado. Force a parada e reabra o aplicativo-alvo."
-                                                : "Configuração salva, mas o pacote não foi adicionado ao escopo.",
+                                                ? R.string.scope_approved
+                                                : R.string.scope_not_added,
                                         Toast.LENGTH_LONG
                                 ).show();
                             });
@@ -499,7 +636,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
                         public void onScopeRequestFailed(String message) {
                             runOnUiThread(() -> Toast.makeText(
                                     MainActivity.this,
-                                    "Configuração salva; falha ao solicitar escopo: " + message,
+                                    getString(R.string.scope_request_failed, message),
                                     Toast.LENGTH_LONG
                             ).show());
                         }
@@ -508,10 +645,107 @@ public final class MainActivity extends Activity implements XposedServiceClient.
         } catch (Throwable throwable) {
             Toast.makeText(
                     this,
-                    "Configuração salva; falha ao solicitar escopo: " + throwable.getMessage(),
+                    getString(
+                            R.string.scope_request_failed,
+                            throwableMessage(throwable)
+                    ),
                     Toast.LENGTH_LONG
             ).show();
         }
+    }
+
+    private void configureEdgeToEdge() {
+        boolean night = isNightMode();
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(Color.TRANSPARENT);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(false);
+            WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                int appearanceMask =
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS |
+                                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                controller.setSystemBarsAppearance(
+                        night ? 0 : appearanceMask,
+                        appearanceMask
+                );
+            }
+        } else {
+            int flags =
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+            if (!night) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            getWindow().getDecorView().setSystemUiVisibility(flags);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void applySystemBarInsets(View root) {
+        int horizontal = dp(16);
+        int top = dp(12);
+        int bottom = dp(10);
+
+        root.setPadding(horizontal, top, horizontal, bottom);
+        root.setOnApplyWindowInsetsListener((view, insets) -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Insets systemBars = insets.getInsets(
+                        WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()
+                );
+                view.setPadding(
+                        horizontal + systemBars.left,
+                        top + systemBars.top,
+                        horizontal + systemBars.right,
+                        bottom + systemBars.bottom
+                );
+            } else {
+                view.setPadding(
+                        horizontal + insets.getSystemWindowInsetLeft(),
+                        top + insets.getSystemWindowInsetTop(),
+                        horizontal + insets.getSystemWindowInsetRight(),
+                        bottom + insets.getSystemWindowInsetBottom()
+                );
+            }
+            return insets;
+        });
+    }
+
+    private void styleInput(EditText input) {
+        input.setSingleLine(true);
+        input.setTextSize(15);
+        input.setTextColor(color(R.color.text_primary));
+        input.setHintTextColor(color(R.color.text_secondary));
+        input.setBackgroundResource(R.drawable.bg_input);
+        input.setPadding(dp(14), 0, dp(14), 0);
+        input.setMinHeight(dp(52));
+    }
+
+    private void styleCheckBox(CheckBox checkBox) {
+        checkBox.setTextSize(13);
+        checkBox.setTextColor(color(R.color.text_primary));
+        checkBox.setButtonTintList(ColorStateList.valueOf(color(R.color.accent)));
+        checkBox.setMinHeight(dp(40));
+    }
+
+    private boolean isNightMode() {
+        int nightMode = getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK;
+        return nightMode == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    private int color(int resourceId) {
+        return getColor(resourceId);
+    }
+
+    private String throwableMessage(Throwable throwable) {
+        String message = throwable.getMessage();
+        return message == null || message.trim().isEmpty()
+                ? throwable.getClass().getSimpleName()
+                : message;
     }
 
     private int dp(int value) {

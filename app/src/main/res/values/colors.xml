@@ -1,3 +1,11 @@
 <resources>
     <color name="ic_launcher_background">#3F51B5</color>
+    <color name="background">#F7F7FB</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="surface_variant">#FFF1F2F7</color>
+    <color name="text_primary">#FF1B1B1F</color>
+    <color name="text_secondary">#FF62636C</color>
+    <color name="accent">#FF5B5BD6</color>
+    <color name="accent_container">#FFEEEEFF</color>
+    <color name="outline">#FFDADBE4</color>
 </resources>
