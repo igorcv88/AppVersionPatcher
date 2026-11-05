@@ -255,7 +255,7 @@ public final class MainActivity extends Activity implements XposedServiceClient.
         listView.setDividerHeight(1);
         listView.setClipToPadding(false);
         listView.setPadding(0, dp(4), 0, dp(8));
-        listView.setScrollbarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        listView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
         listView.setOnItemClickListener((parent, view, position, id) -> {
             if (preferences == null || xposedService == null) {
                 Toast.makeText(this, R.string.wait_for_lsposed, Toast.LENGTH_SHORT).show();
